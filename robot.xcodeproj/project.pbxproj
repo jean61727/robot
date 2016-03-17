@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		B6B1E4A61C940E6A0013EFC4 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B6B1E4A51C940E6A0013EFC4 /* main.cpp */; };
+		B6B1E4AD1C940E7F0013EFC4 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6B1E4AC1C940E7F0013EFC4 /* OpenGL.framework */; };
+		B6B1E4AF1C940E850013EFC4 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6B1E4AE1C940E850013EFC4 /* GLUT.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +27,8 @@
 /* Begin PBXFileReference section */
 		B6B1E4A21C940E6A0013EFC4 /* robot */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = robot; sourceTree = BUILT_PRODUCTS_DIR; };
 		B6B1E4A51C940E6A0013EFC4 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		B6B1E4AC1C940E7F0013EFC4 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		B6B1E4AE1C940E850013EFC4 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = System/Library/Frameworks/GLUT.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +36,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B6B1E4AF1C940E850013EFC4 /* GLUT.framework in Frameworks */,
+				B6B1E4AD1C940E7F0013EFC4 /* OpenGL.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -41,6 +47,8 @@
 		B6B1E4991C940E6A0013EFC4 = {
 			isa = PBXGroup;
 			children = (
+				B6B1E4AE1C940E850013EFC4 /* GLUT.framework */,
+				B6B1E4AC1C940E7F0013EFC4 /* OpenGL.framework */,
 				B6B1E4A41C940E6A0013EFC4 /* robot */,
 				B6B1E4A31C940E6A0013EFC4 /* Products */,
 			);
@@ -207,6 +215,7 @@
 		B6B1E4AA1C940E6A0013EFC4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -214,6 +223,7 @@
 		B6B1E4AB1C940E6A0013EFC4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
