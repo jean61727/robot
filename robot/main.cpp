@@ -14,6 +14,11 @@
 #define MENU_TIMER_START 1
 #define MENU_TIMER_STOP 2
 #define MENU_EXIT 3
+#define MENU_ANIM 4
+#define MENU_STOP 5
+#define DIR_ROTATE_ANGLE 5
+#define DIR_TRANSLATE_ANGLE 0.1
+
 
 const GLubyte robot_head[] = {255,255, 255};
 const GLubyte robot_torso_up[] = {255,199, 240};
@@ -32,15 +37,31 @@ GLUquadricObj *neck=gluNewQuadric();
 GLUquadricObj *torso_1=gluNewQuadric();
 GLUquadricObj *cylinder=gluNewQuadric();
 
+//animation control parts
+
+struct para_anim{
+    
+    GLfloat degree = 0;
+    GLint rotate_enable = 0;
+    
+} head_x, head_y ,left_leg_thigh, right_leg_thigh, right_arm_joint1, right_arm_joint2,left_arm_joint1,left_arm_joint2,torso_down,torso_up,neck_anim;
+
+
 
 
 GLubyte timer_cnt = 0;
 bool timer_enabled = true;
 unsigned int timer_speed = 16;
+int anim_flag=0;
 
-GLfloat xRotated, yRotated, zRotated,angle;
+GLfloat xRotated, yRotated, zRotated, xTranslate, yTranslate, zTranslate,angle;
 float new_angle = 0;
 int flag=0;
+enum Input_direction{still,up, down, right, left,trans_up,trans_left,trans_right,trans_down};
+enum anim_set{nod,wave_right,wave_right2};
+Input_direction dir = still;
+int anim_stage = nod;
+
 
 // Print OpenGL context related information.
 void dumpInfo(void){
@@ -60,20 +81,100 @@ void initGL() {
     glShadeModel(GL_SMOOTH);   // Enable smooth shading
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);  // Nice perspective corrections
 }
+void init_all_parameters(){
+    
+    head_x.rotate_enable=0;
+    head_y.rotate_enable=0;
+    
+    left_leg_thigh.rotate_enable=0;
+    left_leg_thigh.degree=10;
+    
+    right_leg_thigh.rotate_enable=0;
+    right_leg_thigh.degree=10;
+    
+    right_arm_joint1.rotate_enable=0;
+    right_arm_joint1.degree=0;
+    right_arm_joint2.rotate_enable=0;
+    right_arm_joint2.degree=0;
+    left_arm_joint1.rotate_enable=0;
+    left_arm_joint1.degree=0;
+    left_arm_joint2.rotate_enable=0;
+    left_arm_joint2.degree=0;
+    
+    torso_down.rotate_enable=0;
+    torso_down.degree=-0.26;
+    
+    torso_up.rotate_enable=0;
+    torso_up.degree=0.25;
+    neck_anim.rotate_enable=0;
+    neck_anim.degree=0.3;
+    
+    if(anim_flag==1){
+        left_leg_thigh.rotate_enable=1;
+        right_leg_thigh.rotate_enable=1;
+        right_leg_thigh.degree=50;
+        left_leg_thigh.degree=-10;
+        
+        head_x.rotate_enable=1;
+        head_y.rotate_enable=1;
+        
+        right_arm_joint1.rotate_enable=1;
+        right_arm_joint2.rotate_enable=1;
+        left_arm_joint1.rotate_enable=1;
+        left_arm_joint2.rotate_enable=1;
+        
+        torso_down.rotate_enable=1;
+        torso_down.degree=-0.26;
+        
+        torso_up.rotate_enable=1;
+        torso_up.degree=0.25;
+        
+        neck_anim.rotate_enable=0;
+        neck_anim.degree=0.3;
+        
+    }
+    
 
+}
+void Draw_eyes(){
+    
+    glPushMatrix();
+    
+    glPushMatrix();
+    glColor3ubv(robot_eyes);
+    glTranslatef( 0 ,0, 0 );
+    glTranslatef( -0.25 ,1, 0.2);
+    //glRotatef(90,1,0,0);
+    glScalef( 1, 1, 1 );
+    glutSolidSphere(0.43,50,50);
+    glPopMatrix();
+    
+    glPushMatrix();
+    glColor3ubv(robot_eyes);
+    glTranslatef( 0 ,0, 0 );
+    glTranslatef( 0.25 ,1, 0.2);
+    //glRotatef(90,1,0,0);
+    glScalef( 1, 1, 1 );
+    glutSolidSphere(0.43,50,50);
+    glPopMatrix();
+    
+    
+    
+    glPopMatrix();
+}
 void Draw_head(){
     
     glPushMatrix();
+    glRotatef(head_x.degree,1* head_x.rotate_enable,0,0);
+    glRotatef(head_y.degree,0,1* head_y.rotate_enable,0);
+    Draw_eyes();
     glColor3ubv(robot_head);
-    glTranslatef( 0 ,0, 0 );
     glTranslatef( 0 ,1, 0 );
-    //glRotatef(90,1,0,0);
     glScalef( 1.05, 1, 1.05 );
     glutSolidSphere(0.7,50,50);
     glPopMatrix();
 
 }
-
 void Draw_neck(){
     
     
@@ -81,7 +182,8 @@ void Draw_neck(){
 
     
     glColor3ubv(robot_neck);
-    glTranslatef( 0,0.3,0);
+    //glTranslatef( 0,0.3,0);
+    glTranslatef( 0,neck_anim.degree,0);
     glRotatef(-90,1,0,0);
     gluCylinder(neck, 0.4, 0.25, 0.07, 50,50);// (*quad,base,top,height,slices,slices,stacks)
     
@@ -96,14 +198,22 @@ void Draw_neck(){
     glPopMatrix();
 
 }
-
 void Draw_torso(){
     
 
     
     glPushMatrix();
+    
+    glColor3ubv(robot_neck);
+    //glTranslatef( 0,0.3,0);
+    glTranslatef( 0,neck_anim.degree,0);
+    glRotatef(-90,1,0,0);
+    gluCylinder(neck, 0.4, 0.25, 0.07, 50,50);
+    glRotatef(90,1,0,0);
+    
     glColor3ubv(robot_torso_up);
-    glTranslatef( 0,0.25,0);
+    //glTranslatef( 0,0.25,0);
+    glTranslatef( 0,-0.05,0);
     glRotatef(-90,1,0,0);
     gluCylinder(torso_1, 0.37, 0.4, 0.05, 50,50);
     glRotatef(90,1,0,0);
@@ -180,7 +290,7 @@ void Draw_finger(GLfloat angle1, GLfloat angle2,GLfloat axis_x ,GLfloat axis_y,G
     glPopMatrix();
 }
 void Draw_Arm(){
-    angle=angle+1;
+    //angle=angle+1;
 
     //left-arm-1 joint
     glPushMatrix();
@@ -204,6 +314,7 @@ void Draw_Arm(){
         glRotatef(-23,1,0,0);
         glColor3ubv(robot_arm_arm1);
         glTranslatef(0,0.03,-0.05);
+        glRotatef(left_arm_joint1.degree,0,1,0);
         glutSolidSphere(0.05,50,50);
     
     //left-arm-3 arm-2
@@ -252,7 +363,6 @@ void Draw_Arm(){
     glPopMatrix();
 
 }
-
 void Draw_Right_Arm(){
     angle=angle+1;
     
@@ -270,6 +380,7 @@ void Draw_Right_Arm(){
     glColor3ubv(robot_arm_joint2);
     glTranslatef(0,0,0.1);
     glutSolidTorus(0.1,0.13,50,50);
+    
     glRotatef(90,0,1,0);
     glRotatef(23,1,0,0);
     glScalef( 1, 2, 2 );
@@ -278,6 +389,7 @@ void Draw_Right_Arm(){
     glRotatef(-23,1,0,0);
     glColor3ubv(robot_arm_arm1);
     glTranslatef(0,0.03,-0.05);
+    glRotatef(right_arm_joint1.degree,1*right_arm_joint1.rotate_enable,0,0);
     glutSolidSphere(0.05,50,50);
     
     //left-arm-3 arm-2
@@ -296,6 +408,7 @@ void Draw_Right_Arm(){
     glutSolidSphere(0.06,50,50);
     // left-arm-4 hand-2
     glTranslatef(0,0,0.02);
+    glRotatef(right_arm_joint2.degree,1*right_arm_joint2.rotate_enable,0,0);
     glScalef(1,1,0.5);
     glutSolidTorus(0.04,0.04,50,50);
     glScalef(0.7,1,2);
@@ -338,9 +451,11 @@ void Draw_Leg(){
     glScalef(1,1,1/1.25 );
     //left-leg-1 leg
     //glTranslatef( 0,-0.1,0);
-    glRotatef(10,1,0,0);
-    gluCylinder(torso_1, 0.1,0.1, 0.08, 50,50);
-    glTranslatef( 0,0,0.06);
+    //glRotatef(10,1,0,0);
+    glRotatef(left_leg_thigh.degree,1*left_leg_thigh.rotate_enable,0,0);
+    glTranslatef( 0,0.0,-0.05);
+    gluCylinder(torso_1, 0.1,0.1, 0.2, 50,50);
+    glTranslatef( 0,0,0.13);
     glRotatef(10,1,0,0);
     gluCylinder(torso_1, 0.1,0.13, 0.13, 50,50);
     
@@ -381,9 +496,10 @@ void Draw_Right_Leg(){
     glScalef(1,1,1/1.25 );
     //left-leg-1 leg
     //glTranslatef( 0,-0.1,0);
-    glRotatef(10,1,0,0);
-    gluCylinder(torso_1, 0.1,0.1, 0.08, 50,50);
-    glTranslatef( 0,0,0.06);
+    glRotatef(right_leg_thigh.degree,1*right_leg_thigh.rotate_enable,0,0);
+    glTranslatef( 0,0.0,-0.05);
+    gluCylinder(torso_1, 0.1,0.1, 0.2, 50,50);
+    glTranslatef( 0,0,0.13);
     glRotatef(10,1,0,0);
     gluCylinder(torso_1, 0.1,0.13, 0.13, 50,50);
     
@@ -416,34 +532,8 @@ void Draw_cube(){
     glColor3ub(0,0,0);
     glTranslatef( 0 ,-0.2, 0 );
     glRotatef(-90,1,0,0);
-    gluCylinder(cylinder, 0.2, 0.2, 0.15, 50,50);
+    gluCylinder(cylinder, 0.2, 0.2, 0.3, 50,50);
     glRotatef(90,1,0,0);
-    glPopMatrix();
-}
-void Draw_eyes(){
-    
-    glPushMatrix();
-    
-    glPushMatrix();
-    glColor3ubv(robot_eyes);
-    glTranslatef( 0 ,0, 0 );
-    glTranslatef( -0.25 ,1, 0.2);
-    //glRotatef(90,1,0,0);
-    glScalef( 1, 1, 1 );
-    glutSolidSphere(0.43,50,50);
-    glPopMatrix();
-    
-    glPushMatrix();
-    glColor3ubv(robot_eyes);
-    glTranslatef( 0 ,0, 0 );
-    glTranslatef( 0.25 ,1, 0.2);
-    //glRotatef(90,1,0,0);
-    glScalef( 1, 1, 1 );
-    glutSolidSphere(0.43,50,50);
-    glPopMatrix();
-    
-    
-    
     glPopMatrix();
 }
 void Draw_under_torso(){
@@ -456,7 +546,8 @@ void Draw_under_torso(){
     //glutSolidDodecahedron();
     glutSolidIcosahedron();*/
     
-    glTranslatef( 0,-0.26,0);
+    //glTranslatef( 0,-0.26,0);
+    glTranslatef( 0,torso_down.degree,0);
     glRotatef(-90,1,0,0);
     glScalef( 1, 1, 1.25 );
     glutSolidTorus(0.1, 0.25,50,50);
@@ -473,10 +564,11 @@ void Draw_under_torso(){
     
 }
 void Draw_Robot(){
+
     
     Draw_head();
-    Draw_eyes();
-    Draw_neck();
+    //Draw_eyes();
+    //Draw_neck();
     Draw_torso();
     //Left_arm
     Draw_Arm();
@@ -490,75 +582,131 @@ void Draw_Robot(){
 
 
 }
+para_anim set_boundary(GLfloat upper_bound, GLfloat lower_bound, para_anim component, GLfloat speed){
+    
+    if(component.degree <= lower_bound || component.rotate_enable == 1){
+        component.degree += speed;
+        component.rotate_enable = 1;
+        if( component.degree> upper_bound){
+            component.rotate_enable = 0;
+        }
+    }
+    else{
+        component.degree -= speed;
+    }
+    
+    return component;
+}
+void animation(){
+    
+    if(anim_flag!=1){
+    
+    }
+    
+    if(anim_flag==1){
+        
+        left_leg_thigh=set_boundary(50, -10, left_leg_thigh, 1);
+        right_leg_thigh=set_boundary(50, -10, right_leg_thigh, 1);
+        
+        left_arm_joint1= set_boundary(50, -10, left_arm_joint1, 1);
+        //torso_up= set_boundary( 0.28, 0.24, torso_up, 0.0006);
+        torso_down= set_boundary( -0.24, -0.28, torso_down, 0.0006);
+        neck_anim= set_boundary( 0.31, 0.27, neck_anim, 0.0006);
+        //printf("%d\n",left_arm_joint1.rotate_enable);
+        
+        switch (anim_stage) {
+            case nod: // rotating head
+                head_x=set_boundary(30, 0, head_x, 0.5);
+                if(head_x.degree==0){
+                    anim_stage++;
+                }
+                break;
+                
+            case wave_right:
+                right_arm_joint1=set_boundary(60, 0, right_arm_joint1, 0.5);
+                if(right_arm_joint1.degree==60){
+                    anim_stage++;
+                }
+                break;
+            case wave_right2:
+                right_arm_joint2 = set_boundary(30, 0, right_arm_joint2, 0.5);
+                if(flag==0){
+                    head_x=set_boundary(30, 0, head_x, 0.5);
+                }else{
+                     head_y=set_boundary(30, -30, head_y, 0.5);
+                }
+                if(head_x.degree<=0 && flag==0 && head_x.rotate_enable==0){
+                    flag=1;
+                }else if(head_y.degree<=-30 && flag==1 && head_y.rotate_enable==0){
+                    //flag=0;
+                     printf("head_x.rotate_enable%f\n", head_y.degree);
+                }
+                printf("%d\n",flag);
+               
+                
+                break;
+                
+            default:
+                break;
+        }
+        
+       
+
+        
+        
+        
+    }
+    
+}
 
 // GLUT callback. Called to draw the scene.
-void My_Display()
-{
+void My_Display(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);// clear color buffer, depth buffer
     
-    /*if(flag==1){
-        new_angle++;
-    }else if(flag==0){
-        new_angle--;
-    }
-    if(new_angle==-135){
-        flag=1;
-    }else if(new_angle==0){
-        flag=0;
-    }*/
-    
-    
     glLoadIdentity();
-    //glRotatef(yRotated, 0.0f, 1.0f, 0.0f); // Rotate around the y and z axis.
-    //glRotatef(xRotated, 1.0f, 0.0f, 0.0f);
-    yRotated=yRotated+0.5;
+    glTranslatef(0, 0, -4);
+    glTranslatef(xTranslate, yTranslate, zTranslate);
+    glRotatef(yRotated, 0.0f, 1.0f, 0.0f); // Rotate around the y and z axis.
+    glRotatef(xRotated, 1.0f, 0.0f, 0.0f);
     
-    /*if(xRotated >= 360.0f){
-        xRotated = 0.0f;
-    }*/
-    
+    animation();
     Draw_Robot();
-
-    
-    /*glPushMatrix();
-    glColor3ub(255,255,255);
-    glTranslatef( 0 ,-0.5, 0 );
-    glRotatef(90,0,0,1);
-    glScalef( 0.18, 0.24, 0.18 );
-    glutSolidOctahedron();
-    glPopMatrix();*/
-    
-
-    
-    /*glPushMatrix();
-    glColor3ub(255,255,255);
-    glTranslatef( -0.5 ,0, 0 );
-    glScalef( 0.1, 0.1, 0.1 );
-    glutSolidIcosahedron();
-    glPopMatrix();*/
-    /*
-    
-    
-    glPushMatrix();
-    glColor3ub(timer_cnt, 0, 255 - timer_cnt);
-    glTranslatef(0,0,0 );
-    glRotatef(46,0,0,1);
-    glTranslatef(-0.5,0,0 );
-    glScalef( 1, 0.2, 1 );
-    glutSolidSphere(0.5,50,50);
-    
-    glTranslatef(-0.5,0,0 );
-    glScalef( 0.2, 1, 0.2 );
-    glutSolidSphere(0.5,50,50);
-    glPopMatrix();*/
     
     glutSwapBuffers();
 }
-void animation(void){
-    //yRotated += 0.01;
-    //xRotated += 0.02;
-    zRotated += 0.2;
-    My_Display();
+void direction_move(void){
+    
+    switch (dir) {
+        case up:
+            xRotated += DIR_ROTATE_ANGLE;
+            break;
+        case down:
+            xRotated -= DIR_ROTATE_ANGLE;
+            break;
+        case left:
+            yRotated -= DIR_ROTATE_ANGLE;
+            break;
+        case right:
+            yRotated += DIR_ROTATE_ANGLE;
+            break;
+        case trans_up:
+            yTranslate += DIR_TRANSLATE_ANGLE;
+            break;
+        case trans_down:
+            yTranslate -= DIR_TRANSLATE_ANGLE;
+            break;
+        case trans_left:
+            xTranslate -= DIR_TRANSLATE_ANGLE;
+            break;
+        case trans_right:
+            xTranslate += DIR_TRANSLATE_ANGLE;
+            break;
+        default:
+            dir=still;
+            break;
+    }
+    
+    dir = still;
 }
 void My_Reshape(int width, int height){
     
@@ -567,41 +715,59 @@ void My_Reshape(int width, int height){
     float viewportAspect = (float)width / (float)height;
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    //gluPerspective( 65.0, (GLfloat) width / height, 1.0, 100.0 );
-    gluOrtho2D(-2.5 * viewportAspect, 2.5 * viewportAspect, -2.5, 2.5);
+    gluPerspective( 45.0, (GLfloat) width / height, 1, 3000.0 );
+    //gluOrtho2D(-2.5 * viewportAspect, 2.5 * viewportAspect, -2.5, 2.5);
+    gluLookAt(0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 }
+
 
 void My_Timer(int val){
+    
     timer_cnt++;
     glutPostRedisplay();
-    if(timer_enabled)
-    {
+    
+    if(timer_enabled){
         glutTimerFunc(timer_speed, My_Timer, val);
     }
+    
 }
-
 void My_Mouse(int button, int state, int x, int y){
-    if(state == GLUT_DOWN)
-    {
+    
+    if(state == GLUT_DOWN){
         printf("Mouse %d is pressed at (%d, %d)\n", button, x, y);
     }
-    else if(state == GLUT_UP)
-    {
+    
+    else if(state == GLUT_UP){
         printf("Mouse %d is released at (%d, %d)\n", button, x, y);
     }
 }
-
 void My_Keyboard(unsigned char key, int x, int y){
-    printf("Key %c is pressed at (%d, %d)\n", key, x, y);
+    
+    switch (key) {
+        case 'w'://up
+            printf("Key %c is pressed at (%d, %d)\n", key, x, y);
+            dir= trans_up;
+            break;
+        case 'a'://left
+            dir= trans_left;
+            break;
+        case 's'://down
+            dir= trans_down;
+            break;
+        case 'd'://right
+            dir= trans_right;
+            break;
+        default:
+            break;
+    }
+    
 }
-
 void My_SpecialKeys(int key, int x, int y){
     
-    switch(key)
-    {
+    switch(key){
+            
         case GLUT_KEY_F1:
             printf("F1 is pressed at (%d, %d)\n", x, y);
             break;
@@ -610,20 +776,32 @@ void My_SpecialKeys(int key, int x, int y){
             break;
         case GLUT_KEY_LEFT:
             printf("Left arrow is pressed at (%d, %d)\n", x, y);
+            dir= left;
+            break;
+        case GLUT_KEY_RIGHT:
+            printf("Right arrow is pressed at (%d, %d)\n", x, y);
+            dir= right;
+            break;
+        case GLUT_KEY_UP:
+            printf("UP arrow is pressed at (%d, %d)\n", x, y);
+            dir= up;
+            break;
+        case GLUT_KEY_DOWN:
+            printf("Down arrow is pressed at (%d, %d)\n", x, y);
+            dir= down;
             break;
         default:
             printf("Other special key is pressed at (%d, %d)\n", x, y);
             break;
     }
 }
-
 void My_Menu(int id){
     
-    switch(id)
-    {
+    switch(id){
+            
         case MENU_TIMER_START:
-            if(!timer_enabled)
-            {
+            if(!timer_enabled){
+                
                 timer_enabled = true;
                 glutTimerFunc(timer_speed, My_Timer, 0);
             }
@@ -633,6 +811,15 @@ void My_Menu(int id){
             break;
         case MENU_EXIT:
             exit(0);
+            break;
+        case MENU_ANIM:
+            anim_flag=1;
+            init_all_parameters();
+            break;
+        case MENU_STOP:
+            anim_flag=0;
+            anim_stage=nod;
+            init_all_parameters();
             break;
         default:
             break;
@@ -659,7 +846,6 @@ void SetLightSource(){
     
     glEnable(GL_DEPTH_TEST);                               //啟動深度測試
 }
-
 void SetMaterial(){
     
     glEnable(GL_COLOR_MATERIAL);
@@ -675,7 +861,29 @@ void SetMaterial(){
     glMaterialfv( GL_FRONT, GL_SPECULAR, material_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
 }
+void SetMenu(){
+    
+    // Create a menu and bind it to mouse right button.
+    ////////////////////////////
+    int menu_main = glutCreateMenu(My_Menu);
+    int menu_anim = glutCreateMenu(My_Menu);
+    
+    glutSetMenu(menu_main);
+    //glutAddSubMenu("Timer", menu_timer);
+    glutAddSubMenu("Animation", menu_anim);
+    glutAddMenuEntry("Exit", MENU_EXIT);
+    
+    
+    glutSetMenu(menu_anim);
+    glutAddMenuEntry("Anim1", MENU_ANIM);
+    glutAddMenuEntry("Stop", MENU_STOP);
 
+    
+    glutSetMenu(menu_main);
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+    ////////////////////////////
+
+}
 int main(int argc, char *argv[]){
     
     // Initialize GLUT and GLEW, then create a window.
@@ -693,22 +901,8 @@ int main(int argc, char *argv[]){
     // Initialize OpenGL states.
     initGL();
     
-    // Create a menu and bind it to mouse right button.
-    ////////////////////////////
-    int menu_main = glutCreateMenu(My_Menu);
-    int menu_timer = glutCreateMenu(My_Menu);
-    
-    glutSetMenu(menu_main);
-    glutAddSubMenu("Timer", menu_timer);
-    glutAddMenuEntry("Exit", MENU_EXIT);
-    
-    glutSetMenu(menu_timer);
-    glutAddMenuEntry("Start", MENU_TIMER_START);
-    glutAddMenuEntry("Stop", MENU_TIMER_STOP);
-    
-    glutSetMenu(menu_main);
-    glutAttachMenu(GLUT_RIGHT_BUTTON);
-    ////////////////////////////
+    // Set Menu
+    SetMenu();
     
     // Register GLUT callback functions.
     ///////////////////////////////
@@ -718,13 +912,16 @@ int main(int argc, char *argv[]){
     glutKeyboardFunc(My_Keyboard);
     glutSpecialFunc(My_SpecialKeys);
     glutTimerFunc(timer_speed, My_Timer, 0);
-    //glutIdleFunc(animation);
+    glutIdleFunc(direction_move);
     ///////////////////////////////
     
     // Enter main event loop.
     //////////////
     SetLightSource();
     SetMaterial();
+    
+    init_all_parameters();
+
     glutMainLoop();
     //////////////
     return 0;
