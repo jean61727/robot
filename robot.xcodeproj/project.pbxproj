@@ -10,6 +10,9 @@
 		B6B1E4A61C940E6A0013EFC4 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B6B1E4A51C940E6A0013EFC4 /* main.cpp */; };
 		B6B1E4AD1C940E7F0013EFC4 /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6B1E4AC1C940E7F0013EFC4 /* OpenGL.framework */; };
 		B6B1E4AF1C940E850013EFC4 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6B1E4AE1C940E850013EFC4 /* GLUT.framework */; };
+		B6EA98CC1C9EF22A00536768 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B6EA98CB1C9EF22A00536768 /* libjpeg.a */; };
+		B6EA98CE1C9EF39100536768 /* libtexture_loader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B6EA98CD1C9EF39100536768 /* libtexture_loader.a */; };
+		B6EA98D01C9EF43700536768 /* libpng16.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B6EA98CF1C9EF43700536768 /* libpng16.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -29,6 +32,10 @@
 		B6B1E4A51C940E6A0013EFC4 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		B6B1E4AC1C940E7F0013EFC4 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		B6B1E4AE1C940E850013EFC4 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = System/Library/Frameworks/GLUT.framework; sourceTree = SDKROOT; };
+		B6EA98C91C9EF20800536768 /* lib */ = {isa = PBXFileReference; lastKnownFileType = folder; name = lib; path = ../../../../../../../usr/local/Cellar/jpeg/8d/lib; sourceTree = "<group>"; };
+		B6EA98CB1C9EF22A00536768 /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjpeg.a; path = ../../../../../../../usr/local/Cellar/jpeg/8d/lib/libjpeg.a; sourceTree = "<group>"; };
+		B6EA98CD1C9EF39100536768 /* libtexture_loader.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libtexture_loader.a; path = lib/libtexture_loader.a; sourceTree = "<group>"; };
+		B6EA98CF1C9EF43700536768 /* libpng16.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpng16.a; path = ../../../../../../../usr/local/Cellar/libpng/1.6.17/lib/libpng16.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,6 +43,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B6EA98D01C9EF43700536768 /* libpng16.a in Frameworks */,
+				B6EA98CE1C9EF39100536768 /* libtexture_loader.a in Frameworks */,
+				B6EA98CC1C9EF22A00536768 /* libjpeg.a in Frameworks */,
 				B6B1E4AF1C940E850013EFC4 /* GLUT.framework in Frameworks */,
 				B6B1E4AD1C940E7F0013EFC4 /* OpenGL.framework in Frameworks */,
 			);
@@ -47,6 +57,10 @@
 		B6B1E4991C940E6A0013EFC4 = {
 			isa = PBXGroup;
 			children = (
+				B6EA98CF1C9EF43700536768 /* libpng16.a */,
+				B6EA98CD1C9EF39100536768 /* libtexture_loader.a */,
+				B6EA98CB1C9EF22A00536768 /* libjpeg.a */,
+				B6EA98C91C9EF20800536768 /* lib */,
 				B6B1E4AE1C940E850013EFC4 /* GLUT.framework */,
 				B6B1E4AC1C940E7F0013EFC4 /* OpenGL.framework */,
 				B6B1E4A41C940E6A0013EFC4 /* robot */,
@@ -215,7 +229,13 @@
 		B6B1E4AA1C940E6A0013EFC4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/jpeg/8d/lib,
+					"$(PROJECT_DIR)/lib",
+					/usr/local/Cellar/libpng/1.6.17/lib,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -223,7 +243,13 @@
 		B6B1E4AB1C940E6A0013EFC4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/jpeg/8d/lib,
+					"$(PROJECT_DIR)/lib",
+					/usr/local/Cellar/libpng/1.6.17/lib,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -247,6 +273,7 @@
 				B6B1E4AB1C940E6A0013EFC4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

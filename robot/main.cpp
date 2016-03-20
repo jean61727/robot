@@ -10,6 +10,7 @@
 #include <OpenGL/gl.h>
 #include <cstdio>
 #include <cstdlib>
+#include "texture_loader.h"
 
 #define MENU_TIMER_START 1
 #define MENU_TIMER_STOP 2
@@ -29,7 +30,6 @@ const GLubyte robot_arm_joint2[] = {255,199, 240};
 const GLubyte robot_arm_arm1[] = {0, 0, 0};
 const GLubyte robot_arm_arm2[] = {255,199, 240};
 const GLubyte robot_eyes[] = {0,0,0};
-//const GLubyte robox_arm[] = {0, 0, 0};
 const GLubyte robot_leg[] = {255,199, 240};
 
 GLUquadricObj *disk=gluNewQuadric();
@@ -38,29 +38,31 @@ GLUquadricObj *torso_1=gluNewQuadric();
 GLUquadricObj *cylinder=gluNewQuadric();
 
 //animation control parts
-
 struct para_anim{
     
     GLfloat degree = 0;
     GLint rotate_enable = 0;
     
-} head_x, head_y ,left_leg_thigh, right_leg_thigh, right_arm_joint1, right_arm_joint2,left_arm_joint1,left_arm_joint2,torso_down,torso_up,neck_anim;
+}head_x, head_y ,left_leg_thigh, right_leg_thigh, right_arm_joint1, right_arm_joint2,left_arm_joint1,left_arm_joint2,torso_down,torso_up,neck_anim;
 
-
-
-
+// initial parameters flags and counters
 GLubyte timer_cnt = 0;
 bool timer_enabled = true;
 unsigned int timer_speed = 16;
 int anim_flag=0;
+int flag=0; // control animation in head movements
 
+// Stages of directions and animation define
 GLfloat xRotated, yRotated, zRotated, xTranslate, yTranslate, zTranslate,angle;
-float new_angle = 0;
-int flag=0;
 enum Input_direction{still,up, down, right, left,trans_up,trans_left,trans_right,trans_down};
 enum anim_set{nod,wave_right,wave_right2};
+// initial direction and positions
 Input_direction dir = still;
 int anim_stage = nod;
+
+
+GLuint texture_jpg;
+GLuint texture_png;
 
 
 // Print OpenGL context related information.
@@ -81,10 +83,13 @@ void initGL() {
     glShadeModel(GL_SMOOTH);   // Enable smooth shading
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);  // Nice perspective corrections
 }
+/*The initialization of all the parameters controlling the robot rotation and translation */
 void init_all_parameters(){
     
     head_x.rotate_enable=0;
     head_y.rotate_enable=0;
+    head_x.degree=0;
+    head_y.degree=0;
     
     left_leg_thigh.rotate_enable=0;
     left_leg_thigh.degree=10;
@@ -136,6 +141,7 @@ void init_all_parameters(){
     
 
 }
+/*All the function that defines the appearance of the robot*/
 void Draw_eyes(){
     
     glPushMatrix();
@@ -164,18 +170,6 @@ void Draw_eyes(){
 }
 void Draw_head(){
     
-    glPushMatrix();
-    glRotatef(head_x.degree,1* head_x.rotate_enable,0,0);
-    glRotatef(head_y.degree,0,1* head_y.rotate_enable,0);
-    Draw_eyes();
-    glColor3ubv(robot_head);
-    glTranslatef( 0 ,1, 0 );
-    glScalef( 1.05, 1, 1.05 );
-    glutSolidSphere(0.7,50,50);
-    glPopMatrix();
-
-}
-void Draw_neck(){
     
     
     glPushMatrix();
@@ -197,7 +191,22 @@ void Draw_neck(){
     //glutSolidTorus(2.5, 4,50,50);
     glPopMatrix();
 
+
+    glPushMatrix();
+    glRotatef(head_x.degree,1,0,0);
+    glRotatef(head_y.degree,0,1,0);
+    Draw_eyes();
+    glColor3ubv(robot_head);
+    glTranslatef( 0 ,1, 0 );
+    glScalef( 1.05, 1, 1.05 );
+
+    glutSolidSphere(0.7,50,50);
+
+    glPopMatrix();
+
+
 }
+void Draw_neck(){}
 void Draw_torso(){
     
 
@@ -397,9 +406,13 @@ void Draw_Right_Arm(){
     glTranslatef(0,0,-0.1);
     //glRotatef(angle,0,1,0);
     //glRotatef(-50,1,0,0);
+
     glScalef(1,1,3);
     glutSolidCube(0.4/5);
     glScalef(1,1,1.0/3);
+    
+    
+
     
     // left-arm-4 hand-1
     glColor3ubv(robot_arm_arm2);
@@ -522,7 +535,21 @@ void Draw_Right_Leg(){
     gluCylinder(torso_1, 0.17,0.3, 0.16, 50,50);
     glTranslatef(0,0,0.16);
     gluDisk(disk, 0, 0.3, 50, 50);
-    
+    glTranslatef(0,0.05,0);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texture_png);
+    glBegin(GL_QUADS);
+    {
+        glNormal3f(0, 0, 1);
+        //glColor3f(1, 1, 1);
+        glTexCoord2f(1.05, 1.01); glVertex3f(-0.18f, 0.15f, 0.01f);
+        glTexCoord2f(1.05, 0.01); glVertex3f(-0.18f, -0.25f, 0.01f);
+        glTexCoord2f(2.05, 0.01); glVertex3f(0.22f, -0.25f, 0.01f);
+        glTexCoord2f(2.05, 1.01); glVertex3f(0.22f, 0.15f, 0.01f);
+    }
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDisable(GL_TEXTURE_2D);
     
     glPopMatrix();
 }
@@ -582,6 +609,8 @@ void Draw_Robot(){
 
 
 }
+
+/*set the rotation boundary of each animation */
 para_anim set_boundary(GLfloat upper_bound, GLfloat lower_bound, para_anim component, GLfloat speed){
     
     if(component.degree <= lower_bound || component.rotate_enable == 1){
@@ -593,6 +622,7 @@ para_anim set_boundary(GLfloat upper_bound, GLfloat lower_bound, para_anim compo
     }
     else{
         component.degree -= speed;
+        
     }
     
     return component;
@@ -616,7 +646,7 @@ void animation(){
         
         switch (anim_stage) {
             case nod: // rotating head
-                head_x=set_boundary(30, 0, head_x, 0.5);
+                head_x=set_boundary(15, 0, head_x, 0.5);
                 if(head_x.degree==0){
                     anim_stage++;
                 }
@@ -631,19 +661,20 @@ void animation(){
             case wave_right2:
                 right_arm_joint2 = set_boundary(30, 0, right_arm_joint2, 0.5);
                 if(flag==0){
-                    head_x=set_boundary(30, 0, head_x, 0.5);
+                    head_x=set_boundary(15, 0, head_x, 0.5);
+                    
                 }else{
                      head_y=set_boundary(30, -30, head_y, 0.5);
                 }
                 if(head_x.degree<=0 && flag==0 && head_x.rotate_enable==0){
                     flag=1;
-                }else if(head_y.degree<=-30 && flag==1 && head_y.rotate_enable==0){
-                    //flag=0;
-                     printf("head_x.rotate_enable%f\n", head_y.degree);
-                }
-                printf("%d\n",flag);
-               
                 
+                }else if(head_y.degree<=-30 && flag==1 && head_y.rotate_enable==0){
+                    flag=0;
+
+                }
+
+
                 break;
                 
             default:
@@ -671,6 +702,7 @@ void My_Display(){
     
     animation();
     Draw_Robot();
+
     
     glutSwapBuffers();
 }
@@ -884,6 +916,42 @@ void SetMenu(){
     ////////////////////////////
 
 }
+
+void initTextures()
+{
+    // load jpg
+    texture_data tdata = load_jpg("nthu.jpg"); // return width * height * 3 uchars
+    if(tdata.data == 0)
+    {
+        // load failed
+        return;
+    }
+    glGenTextures(1, &texture_jpg);
+    glBindTexture(GL_TEXTURE_2D, texture_jpg);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, tdata.width, tdata.height, 0, GL_RGB, GL_UNSIGNED_BYTE, tdata.data); // Use GL_RGB
+    glGenerateMipmap(GL_TEXTURE_2D);
+    free_texture_data(tdata);
+    
+    
+    // load png
+    tdata = load_png("/Users/jeanlee/Downloads/symbols.png"); // return width * height * 4 uchars
+    if(tdata.data == 0)
+    {
+        // load failed
+        return;
+    }
+    glGenTextures(1, &texture_png);
+    glBindTexture(GL_TEXTURE_2D, texture_png);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, tdata.width, tdata.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tdata.data); // Use GL_RGBA
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    free_texture_data(tdata);
+    
+    
+}
 int main(int argc, char *argv[]){
     
     // Initialize GLUT and GLEW, then create a window.
@@ -900,10 +968,11 @@ int main(int argc, char *argv[]){
     
     // Initialize OpenGL states.
     initGL();
+    initTextures();
     
     // Set Menu
     SetMenu();
-    
+    init_all_parameters();
     // Register GLUT callback functions.
     ///////////////////////////////
     glutDisplayFunc(My_Display);
@@ -920,7 +989,7 @@ int main(int argc, char *argv[]){
     SetLightSource();
     SetMaterial();
     
-    init_all_parameters();
+    
 
     glutMainLoop();
     //////////////
